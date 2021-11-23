@@ -1,0 +1,16 @@
+domain: codepraxis.com
+layout:
+- go.kubebuilder.io/v3
+projectName: kyaninus
+repo: codepraxis.com/kyaninus
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: codepraxis.com
+  group: kyaninus
+  kind: DeploymentVersion
+  path: codepraxis.com/kyaninus/api/v1
+  version: v1
+version: "3"

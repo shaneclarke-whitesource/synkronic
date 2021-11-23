@@ -1,0 +1,6 @@
+apiVersion: kyaninus.codepraxis.com/v1
+kind: DeploymentVersion
+metadata:
+  name: deploymentversion-sample
+spec:
+  # TODO(user): Add fields here

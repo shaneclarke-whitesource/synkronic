@@ -1,0 +1,24 @@
+# permissions for end users to edit deploymentversions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: deploymentversion-editor-role
+rules:
+- apiGroups:
+  - kyaninus.codepraxis.com
+  resources:
+  - deploymentversions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kyaninus.codepraxis.com
+  resources:
+  - deploymentversions/status
+  verbs:
+  - get

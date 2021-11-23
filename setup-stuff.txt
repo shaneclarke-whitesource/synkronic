@@ -1,0 +1,4 @@
+minikube start --insecure-registry mkregistry.local:5000
+
+export DEV_IP=172.16.1.1
+minikube ssh "echo \"$DEV_IP       mkregistry.local\" | sudo tee -a  /etc/hosts"
