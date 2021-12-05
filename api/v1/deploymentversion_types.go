@@ -24,47 +24,6 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CronJobSpec defines the desired state of CronJob
-type CronJobSpec struct {
-	//+kubebuilder:validation:MinLength=0
-
-	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
-	Schedule string `json:"schedule"`
-
-	//+kubebuilder:validation:Minimum=0
-
-	// Optional deadline in seconds for starting the job if it misses scheduled
-	// time for any reason.  Missed jobs executions will be counted as failed ones.
-	// +optional
-	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
-
-	// This flag tells the controller to suspend subsequent executions, it does
-	// not apply to already started executions.  Defaults to false.
-	// +optional
-	Suspend *bool `json:"suspend,omitempty"`
-
-	//+kubebuilder:validation:Minimum=0
-
-	// The number of successful finished jobs to retain.
-	// This is a pointer to distinguish between explicit zero and not specified.
-	// +optional
-	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
-
-	//+kubebuilder:validation:Minimum=0
-
-	// The number of failed finished jobs to retain.
-	// This is a pointer to distinguish between explicit zero and not specified.
-	// +optional
-	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
-
-	//+kubebuilder:validation:Minimum=0
-
-	// The number of failed finished jobs to retain.
-	// This is a pointer to distinguish between explicit zero and not specified.
-	// +optional
-	FailedJobsHistoryLimit2 *int32 `json:"failedJobsHistoryLimit2,omitempty"`
-}
-
 // DeploymentVersionSpec defines the desired state of DeploymentVersion
 type DeploymentVersionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -94,12 +53,8 @@ type DeploymentVersion struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// +optional
-	Namespace string                  `json:"namespace,omitempty"`
-	Spec      DeploymentVersionSpec   `json:"spec,omitempty"`
-	Status    DeploymentVersionStatus `json:"status,omitempty"`
-	// +optional
-	FailedJobsHistoryLimit2 *int32 `json:"failedJobsHistoryLimit2,omitempty"`
+	Spec   DeploymentVersionSpec   `json:"spec,omitempty"`
+	Status DeploymentVersionStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true

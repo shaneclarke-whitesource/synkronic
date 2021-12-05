@@ -25,9 +25,7 @@ As usual, we start with the necessary imports. We also define some utility varia
 package controllers
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -38,13 +36,6 @@ import (
 
 	kyaninusv1 "codepraxis.com/kyaninus/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
-
-	"bufio"
-
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	json "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	scheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 // +kubebuilder:docs-gen:collapse=Imports
@@ -64,7 +55,7 @@ var _ = Describe("DeploymentVersion controller", func() {
 		DeployName      = "myappdeploy"
 		DeployNamespace = "default"
 
-		timeout  = time.Second * 100
+		timeout  = time.Second * 10
 		duration = time.Second * 10
 		interval = time.Millisecond * 250
 	)
@@ -100,11 +91,17 @@ var _ = Describe("DeploymentVersion controller", func() {
 
 			Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 
-			By("By creating a new DeploymentVersion")
+			createdDeploy := &appsv1.Deployment{}
 
-			var num int32 = 6
-			var replicas *int32
-			replicas = &num
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: DeployName, Namespace: DeployNamespace}, createdDeploy)
+				if err != nil {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+
+			By("By creating a new DeploymentVersion")
 
 			deploymentVersion := &kyaninusv1.DeploymentVersion{
 				TypeMeta: metav1.TypeMeta{
@@ -116,12 +113,8 @@ var _ = Describe("DeploymentVersion controller", func() {
 					Namespace: DeployNamespace,
 				},
 				Spec: kyaninusv1.DeploymentVersionSpec{
-					/*Name:      DeployName,
+					Name:      DeployName,
 					Namespace: DeployNamespace,
-					*/
-					Name:      "asdf",
-					Namespace: "zxcv",
-					TestProp:  "testprop",
 					DeploymentSpec: appsv1.DeploymentSpec{
 						Selector: &labelSelector,
 						Template: v1.PodTemplateSpec{
@@ -139,26 +132,24 @@ var _ = Describe("DeploymentVersion controller", func() {
 						},
 					},
 				},
-				Namespace:               "test1000",
-				FailedJobsHistoryLimit2: replicas,
 			}
 
-			//s2 := serializer.NewCodecFactory(scheme.Scheme)
-			s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme,
-				scheme.Scheme)
+			/*
+				s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme,
+					scheme.Scheme)
 
-			var b bytes.Buffer
-			buffwriter := bufio.NewWriter(&b)
+				var b bytes.Buffer
+				buffwriter := bufio.NewWriter(&b)
 
-			s.Encode(deploymentVersion, buffwriter)
+				s.Encode(deploymentVersion, buffwriter)
 
-			buffwriter.Flush()
-			fmt.Println(b.String())
+				buffwriter.Flush()
+				fmt.Println(b.String())
 
-			deploymentVersion2 := &kyaninusv1.DeploymentVersion{}
+				deploymentVersion2 := &kyaninusv1.DeploymentVersion{}
 
-			s.Decode(b.Bytes(), &schema.GroupVersionKind{Group: "kyasdfaninus.codepraxis.com", Version: "v1", Kind: "DeploymentVersion"}, deploymentVersion2)
-
+				s.Decode(b.Bytes(), &schema.GroupVersionKind{Group: "kyaninus.codepraxis.com", Version: "v1", Kind: "DeploymentVersion"}, deploymentVersion2)
+			*/
 			/*
 				bytes, err := json.Marshal(deploymentVersion)
 				if err != nil {
@@ -175,11 +166,9 @@ var _ = Describe("DeploymentVersion controller", func() {
 					metav1.NewControllerRef(deploymentVersion, gvk)
 			*/
 
-			err1 := k8sClient.Create(ctx, deploymentVersion)
-			//Expect(k8sClient.Create(ctx, deploymentVersion)).Should(Succeed())
+			//err1 := k8sClient.Create(ctx, deploymentVersion)
+			Expect(k8sClient.Create(ctx, deploymentVersion)).Should(Succeed())
 
-			if err1 != nil {
-			}
 			/*
 				After creating this DeploymentVersion, let's check that the DeploymentVersion's Spec fields match what we passed in.
 				Note that, because the k8s apiserver may not have finished creating a CronJob after our `Create()` call from earlier, we will use Gomega’s Eventually() testing function instead of Expect() to give the apiserver an opportunity to finish creating our CronJob.
@@ -202,85 +191,16 @@ var _ = Describe("DeploymentVersion controller", func() {
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
-			// Let's make sure our Schedule string value was properly converted/handled.
-			//Expect(createdDeployVersion.Spec.Schedule).Should(Equal("1 * * * *"))
 
-			/*
-				Now that we've created a DeploymentVersion in our test cluster, the next step is to write a test that actually tests our CronJob controller’s behavior.
-				Let’s test the DeploymentVersion controller’s logic
-			*/
-			/*
-				By("By checking the CronJob has zero active Jobs")
-				Consistently(func() (int, error) {
-					err := k8sClient.Get(ctx, deployVersionLookupKey, createdDeployVersion)
-					if err != nil {
-						return -1, err
-					}
-					//return len(createdDeployVersion.Status.Active), nil
-					return 1, nil
-				}, duration, interval).Should(Equal(0))
-			*/
-			/*
-				Next, we actually create a stubbed Deployment that will belong to our DeploymentVersion, as well as its downstream template specs.
-
-				We then take the stubbed Deployment and set its owner reference to point to our test DeploymentVersion.
-				This ensures that the test Deployment belongs to, and is tracked by, our test DeploymentVersion.
-				Once that’s done, we create our new Deployment instance.
-			*/
-			By("By creating a new Deployment")
-			testDeployment := &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "deploy1",
-					Namespace: DeployNamespace,
-				},
-				Spec: appsv1.DeploymentSpec{
-					Selector: &labelSelector,
-					Template: v1.PodTemplateSpec{
-						// For simplicity, we only ll out the required fields.
-						ObjectMeta: metav1.ObjectMeta{Name: DeployName, Namespace: DeployNamespace, Labels: matchLabels},
-						Spec: v1.PodSpec{
-							Containers: []v1.Container{
-								{
-									Name:  "test-container",
-									Image: "test-image",
-								},
-							},
-							RestartPolicy: v1.RestartPolicyAlways,
-						},
-					},
-				},
-				Status: appsv1.DeploymentStatus{
-					Replicas: 1,
-				},
-			}
-
-			// Note that your CronJob’s GroupVersionKind is required to set up this owner reference.
-			//kind := reflect.TypeOf(kyaninusv1.DeploymentVersion{}).Name()
-			//gvk := kyaninusv1.GroupVersion.WithKind(kind)
-
-			//controllerRef := metav1.NewControllerRef(createdDeployVersion, gvk)
-
-			//testDeployment.SetOwnerReferences([]metav1.OwnerReference{*controllerRef})
-			Expect(k8sClient.Create(ctx, testDeployment)).Should(Succeed())
-			/*
-				Adding this Job to our test CronJob should trigger our controller’s reconciler logic.
-				After that, we can write a test that evaluates whether our controller eventually updates our CronJob’s Status field as expected!
-			*/
-			/*
-				By("By checking that the CronJob has one active Job")
-				Eventually(func() ([]string, error) {
-					err := k8sClient.Get(ctx, deployVersionLookupKey, createdDeployVersion)
-					if err != nil {
-						return nil, err
-					}
-
-					names := []string{}
-					for _, job := range createdDeployVersion.Status.Active {
-						names = append(names, job.Name)
-					}
-					return names, nil
-				}, timeout, interval).Should(ConsistOf(JobName), "should list our active job %s in the active jobs list in status", JobName)
-			*/
+			//Check new deployment has been created per spec
+			createdDeploy2 := &appsv1.Deployment{}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: DeployName + "1", Namespace: DeployNamespace}, createdDeploy2)
+				if err != nil {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
 		})
 	})
 

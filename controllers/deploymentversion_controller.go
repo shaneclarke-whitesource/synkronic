@@ -19,9 +19,11 @@ package controllers
 import (
 	"context"
 
+	"github.com/imdario/mergo"
 	appsv1 "k8s.io/api/apps/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -58,30 +60,36 @@ func (r *DeploymentVersionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	/*
-		var baseDeploy *appsv1.Deployment
-		baseDeployName := types.NamespacedName{Namespace: deploymentVersion.Spec.Namespace, Name: deploymentVersion.Spec.Name}
+	baseDeploy := &appsv1.Deployment{}
+	baseDeployName := types.NamespacedName{Namespace: deploymentVersion.Spec.Namespace, Name: deploymentVersion.Spec.Name}
 
-		if err := r.Client.Get(ctx, baseDeployName, baseDeploy); err != nil {
-			log.Log.Error(err, "Unable to fetch base Deployment")
+	if err := r.Client.Get(ctx, baseDeployName, baseDeploy); err != nil {
+		log.Log.Error(err, "Unable to fetch base Deployment")
 
-			return ctrl.Result{}, client.IgnoreNotFound(err)
-		}
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 
-		newDeploy := baseDeploy.DeepCopy()
+	newDeploy := baseDeploy.DeepCopy()
 
-		log.Log.Info("have DeploymentVersion!")
+	log.Log.Info("have DeploymentVersion!")
 
-		if err := mergo.Merge(&newDeploy.Spec, deploymentVersion.Spec.DeploymentSpec, mergo.WithOverride); err != nil {
+	if err := mergo.Merge(&newDeploy.Spec, deploymentVersion.Spec.DeploymentSpec, mergo.WithOverride); err != nil {
 
-			log.Log.Error(err, "Error merging configuration")
+		log.Log.Error(err, "Error merging configuration")
 
-			return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 
-		}
+	}
 
-		r.Client.Create(ctx, newDeploy)
-	*/
+	newDeploy.Name = newDeploy.Name + "1"
+	newDeploy.ResourceVersion = ""
+
+	if err := r.Client.Create(ctx, newDeploy); err != nil {
+		log.Log.Error(err, "Error creating new deployment")
+
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
 	return ctrl.Result{}, nil
 }
 
