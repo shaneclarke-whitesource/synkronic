@@ -25,8 +25,9 @@ As usual, we start with the necessary imports. We also define some utility varia
 package controllers
 
 import (
+	"bytes"
 	"context"
-	"reflect"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -37,6 +38,13 @@ import (
 
 	kyaninusv1 "codepraxis.com/kyaninus/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
+
+	"bufio"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	json "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	scheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 // +kubebuilder:docs-gen:collapse=Imports
@@ -56,7 +64,7 @@ var _ = Describe("DeploymentVersion controller", func() {
 		DeployName      = "myappdeploy"
 		DeployNamespace = "default"
 
-		timeout  = time.Second * 10
+		timeout  = time.Second * 100
 		duration = time.Second * 10
 		interval = time.Millisecond * 250
 	)
@@ -93,25 +101,85 @@ var _ = Describe("DeploymentVersion controller", func() {
 			Expect(k8sClient.Create(ctx, deployment)).Should(Succeed())
 
 			By("By creating a new DeploymentVersion")
+
+			var num int32 = 6
+			var replicas *int32
+			replicas = &num
+
 			deploymentVersion := &kyaninusv1.DeploymentVersion{
 				TypeMeta: metav1.TypeMeta{
-					APIVersion: "deploymentversions.kyaninus.codepraxis.com/v1",
+					APIVersion: "kyaninus.codepraxis.com/v1",
 					Kind:       "DeploymentVersion",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "deployversion1",
 					Namespace: DeployNamespace,
 				},
-				Spec: kyaninusv1.DeploymentVersionSpec{},
+				Spec: kyaninusv1.DeploymentVersionSpec{
+					/*Name:      DeployName,
+					Namespace: DeployNamespace,
+					*/
+					Name:      "asdf",
+					Namespace: "zxcv",
+					TestProp:  "testprop",
+					DeploymentSpec: appsv1.DeploymentSpec{
+						Selector: &labelSelector,
+						Template: v1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{Name: DeployName, Namespace: DeployNamespace, Labels: matchLabels},
+							Spec: v1.PodSpec{
+								// For simplicity, we only fill out the required fields.
+								Containers: []v1.Container{
+									{
+										Name:  "test-container",
+										Image: "test-image",
+									},
+								},
+								RestartPolicy: v1.RestartPolicyAlways,
+							},
+						},
+					},
+				},
+				Namespace:               "test1000",
+				FailedJobsHistoryLimit2: replicas,
 			}
 
-			kind := reflect.TypeOf(kyaninusv1.DeploymentVersion{}).Name()
-			gvk := kyaninusv1.GroupVersion.WithKind(kind)
+			//s2 := serializer.NewCodecFactory(scheme.Scheme)
+			s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme,
+				scheme.Scheme)
 
-			metav1.NewControllerRef(deploymentVersion, gvk)
+			var b bytes.Buffer
+			buffwriter := bufio.NewWriter(&b)
 
-			Expect(k8sClient.Create(ctx, deploymentVersion)).Should(Succeed())
+			s.Encode(deploymentVersion, buffwriter)
 
+			buffwriter.Flush()
+			fmt.Println(b.String())
+
+			deploymentVersion2 := &kyaninusv1.DeploymentVersion{}
+
+			s.Decode(b.Bytes(), &schema.GroupVersionKind{Group: "kyasdfaninus.codepraxis.com", Version: "v1", Kind: "DeploymentVersion"}, deploymentVersion2)
+
+			/*
+				bytes, err := json.Marshal(deploymentVersion)
+				if err != nil {
+					fmt.Println("Can't serislize", deploymentVersion)
+				}
+
+				asdf := string(bytes)
+				fmt.Printf("%v => %v, '%v'\n", deploymentVersion, bytes, asdf)
+
+					kind := reflect.TypeOf(kyaninusv1.DeploymentVersion{}).Name()
+
+					gvk := kyaninusv1.GroupVersion.WithKind(kind)
+
+					metav1.NewControllerRef(deploymentVersion, gvk)
+			*/
+
+			err1 := k8sClient.Create(ctx, deploymentVersion)
+			//Expect(k8sClient.Create(ctx, deploymentVersion)).Should(Succeed())
+
+			if err1 != nil {
+			}
 			/*
 				After creating this DeploymentVersion, let's check that the DeploymentVersion's Spec fields match what we passed in.
 				Note that, because the k8s apiserver may not have finished creating a CronJob after our `Create()` call from earlier, we will use Gomega’s Eventually() testing function instead of Expect() to give the apiserver an opportunity to finish creating our CronJob.

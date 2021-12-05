@@ -53,15 +53,35 @@ func (r *DeploymentVersionReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	var deploymentVersion kyaninusv1.DeploymentVersion
 	if err := r.Get(ctx, req.NamespacedName, &deploymentVersion); err != nil {
-		log.Log.Error(err, "unable to fetch DeploymentVersion")
+		log.Log.Error(err, "Unable to fetch DeploymentVersion")
 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	log.Log.Info("have DeploymentVersion!")
+	/*
+		var baseDeploy *appsv1.Deployment
+		baseDeployName := types.NamespacedName{Namespace: deploymentVersion.Spec.Namespace, Name: deploymentVersion.Spec.Name}
 
-	r.Client.Create(ctx, &appsv1.Deployment{})
+		if err := r.Client.Get(ctx, baseDeployName, baseDeploy); err != nil {
+			log.Log.Error(err, "Unable to fetch base Deployment")
 
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+
+		newDeploy := baseDeploy.DeepCopy()
+
+		log.Log.Info("have DeploymentVersion!")
+
+		if err := mergo.Merge(&newDeploy.Spec, deploymentVersion.Spec.DeploymentSpec, mergo.WithOverride); err != nil {
+
+			log.Log.Error(err, "Error merging configuration")
+
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+
+		}
+
+		r.Client.Create(ctx, newDeploy)
+	*/
 	return ctrl.Result{}, nil
 }
 
