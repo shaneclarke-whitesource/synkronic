@@ -1,19 +1,3 @@
-/*
-Copyright 2021.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package controllers
 
 import (
@@ -37,6 +21,11 @@ type DeploymentVersionReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+var (
+	jobOwnerKey = ".metadata.controller"
+	//apiGVStr    = kyaninusv1.GroupVersion.String()
+)
+
 //+kubebuilder:rbac:groups=kyaninus.codepraxis.com,resources=deploymentversions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=kyaninus.codepraxis.com,resources=deploymentversions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kyaninus.codepraxis.com,resources=deploymentversions/finalizers,verbs=update
@@ -51,43 +40,58 @@ type DeploymentVersionReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *DeploymentVersionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
 
 	var deploymentVersion kyaninusv1.DeploymentVersion
 	if err := r.Get(ctx, req.NamespacedName, &deploymentVersion); err != nil {
-		log.Log.Error(err, "Unable to fetch DeploymentVersion")
-
+		log.Error(err, "Unable to fetch DeploymentVersion")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	var existingDeploy appsv1.Deployment
+	err := r.Get(ctx, req.NamespacedName, &existingDeploy)
+
+	haveDeploy := true
+	if err != nil {
+		log.Info("Error getting existing Deploy")
+		haveDeploy = false
+	}
+
+	log.Info("Have DeploymentVersion")
 
 	baseDeploy := &appsv1.Deployment{}
 	baseDeployName := types.NamespacedName{Namespace: deploymentVersion.Spec.Namespace, Name: deploymentVersion.Spec.Name}
 
 	if err := r.Client.Get(ctx, baseDeployName, baseDeploy); err != nil {
-		log.Log.Error(err, "Unable to fetch base Deployment")
-
+		log.Error(err, "Unable to fetch base Deployment")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	newDeploy := baseDeploy.DeepCopy()
 
-	log.Log.Info("have DeploymentVersion!")
-
 	if err := mergo.Merge(&newDeploy.Spec, deploymentVersion.Spec.DeploymentSpec, mergo.WithOverride); err != nil {
-
-		log.Log.Error(err, "Error merging configuration")
-
+		log.Error(err, "Error merging configuration")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
-
 	}
 
-	newDeploy.Name = newDeploy.Name + "1"
+	newDeploy.Name = deploymentVersion.Name
+	newDeploy.Namespace = deploymentVersion.Namespace
 	newDeploy.ResourceVersion = ""
 
-	if err := r.Client.Create(ctx, newDeploy); err != nil {
-		log.Log.Error(err, "Error creating new deployment")
+	if haveDeploy {
+		if err := r.Client.Update(ctx, newDeploy); err != nil {
+			log.Error(err, "Error updating existing deployment")
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+	} else {
+		if err := r.Client.Create(ctx, newDeploy); err != nil {
+			log.Error(err, "Error creating new deployment")
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
 
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if err := ctrl.SetControllerReference(&deploymentVersion, newDeploy, r.Scheme); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
