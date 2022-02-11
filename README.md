@@ -1,2 +1,4 @@
-# kyaninus
+# Synkronic 
 Rainbow Deployment for Kubernetes 
+
+
