@@ -4,14 +4,20 @@ Rainbow Deployment for Kubernetes
 
 ## Design
 
-### Creating Multiple Deployments
-A developer will first make normal Deployment & Service, with a specific image.  
-Rainbow Alpha Operator [generate service/deploy] can then be configured with new versions referring to that Deployment/Service, and will create a clone of the base Deploy/Service for each new version.  The operator will remove old versions by API call or through reconciliation. 
+### Multiple Version Spin-up
+A developer will first deply a service by making normal Deployment & Service objects.
 
-### Routing
-NGinx or Traefik are capable of mapping patterns of subdomain names (version-1.mydomain.com) or URL paths (mydomain.com/version-1) to services.  This may be handled by naming convention between the Cyan Alpha Operator and the Reverse Proxy.  
+A Synkronic Operator will run in the environment, configured by a CRD object which specifies parameters for new versions of the service.  As new versions are configured using operator CRDs, the base objects will be cloned and created using these new parameters.  Removal or modification of these CRDs will cause removal of the new versions.  
+
+This CRD is a *DeploymentVersion* object.  It contains references to the base resources it will cause to clone, and the parameters described above.  
+
+### Routing to Versions
+NGinx or Traefik are capable of mapping patterns of subdomain names (version-1.mydomain.com) or URL paths (mydomain.com/version-1) to services.  This may be handled by naming convention between the Synkronic Operator and the Reverse Proxy.  
+
 
 #### Sample CRD
+This is a sample custom resource definition.  
+
 ```
 apiVersion: "stable.example.com/v1"
 kind: CronTab
