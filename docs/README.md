@@ -18,26 +18,14 @@ A Synkronic Operator will run in the environment, configured by a CRD object whi
 
 This CRD is a *DeploymentVersion* object.  It contains references to the base resources it will cause to clone, and the parameters described above.  
 
-Another CRD *Router* may configure how the operator will modify Ingress or othre services in response to creation of a new version.  
+Another CRD *Router* may configure how the operator will modify Ingress or other services in response to creation of a new version.  
+
+![High Level Design Diagram](hld.drawio.png)
 
 ### Routing to Versions
 NGinx or Traefik are capable of mapping patterns of subdomain names (version-1.mydomain.com) or URL paths (mydomain.com/version-1) to services.  This may be handled by naming convention between the Synkronic Operator and the Reverse Proxy.  
 
-
-#### Sample CRD
-This is a sample custom resource definition.  
-
-```yaml
-apiVersion: "stable.example.com/v1"
-kind: CronTab
-metadata:
-  name: my-new-cron-object
-spec:
-  cronSpec: "* * * * */5"
-  image: my-awesome-cron-image
-```
-
-#### DeploymentVersion CRD
+### Sample DeploymentVersion CRD
 ```yaml
 apiVersion: "kyaninus.com/v1"
 kind: DeploymentVersion
