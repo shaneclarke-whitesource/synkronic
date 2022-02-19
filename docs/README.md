@@ -5,7 +5,7 @@ Rainbow deployment addresses congestion that occurs in development processes, wh
 
 Rainbow deployment allows for an unlimited number of versions of an application to be available, and so tested and ensured to be stable before merging into any other branch.  This enables change reviewers to view development work without waiting for a coordinated release, but instead as soon as the developer is ready to push.  The flexibility of these feature branch reviews extend into higher environments, where multiple versions of a production service may run and enable blue/green style testing before activating a new version, and with versions remaining for an extended time greater options in rolling back.  Further, rainbow deployments allow for simultaneous testing of multiple versions by QA, or partial releases to subsets of service consumers.  A QA team may be targeted to test one version while another team can test a second, both receiving frequent updates.  
 
-## Resource
+## Resources
 
 [Developer's Guide](DEVGUIDE.md)
 
