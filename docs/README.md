@@ -1,5 +1,4 @@
-# Synkronic 
-## Rainbow Deployment for Kubernetes 
+## Overview 
 
 Rainbow deployment addresses congestion that occurs in development processes, where teams must sync and merge codebases, stabilize branches, coordinate releases all while managing workstreams, breakages and other exceptional cases.  In agile processes an unstable feature branch will often merge and deploy to environment, delaying or forcing a repeat of the release process.  
 
