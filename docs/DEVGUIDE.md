@@ -1,4 +1,3 @@
-# Synkronic 
 ## Development Getting Starting  
 
 ### Golang Install
