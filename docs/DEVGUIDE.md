@@ -19,14 +19,16 @@ docker run -d -p 5000:5000 --restart=always --volume ~/.registry/storage:/var/li
 
 ##### Set dev host and minikube docker daemons to allow that insecure registry 
 
-Edit the /etc/hosts file on your development machine, adding the name mkregistry.local on the same line as the entry for localhost.
-Set host aliases to the registry on host, and inside minikube
-Edit /etc/docker/daemon.json (create the file if it does not exist)
+- Edit the /etc/hosts file on your development machine, adding the name mkregistry.local on the same line as the entry for localhost.
+- Set host aliases to the registry on host, and inside minikube
+- Edit /etc/docker/daemon.json (create the file if it does not exist)
 ```json
 {
   "insecure-registries": ["mkregistry.local:5000"]
 }
 ```
+- Restart the docker daemon
+  - On Ubuntu: systemctl docker restart  
 
 ##### Configure a fixed IP address
 
@@ -45,7 +47,7 @@ Add an entry to /etc/hosts inside the minikube VM, pointing the registry to the 
 
 ```bash
 export DEV_IP=172.16.1.1
-minikube ssh "echo \"$DEV_IP       mkregistry.local.local\" | sudo tee -a  /etc/hosts"
+minikube ssh "echo \"$DEV_IP       mkregistry.local\" | sudo tee -a  /etc/hosts"
 ```
 
 #### Restarting Minikube
@@ -64,12 +66,19 @@ https://github.com/kubernetes-sigs/kubebuilder
 https://book.kubebuilder.io/quick-start.html#create-a-project
 
 make docker-build
-make docker-deploy
+
+make docker-push
+
 make install
+
 make deploy
 
 #### Test Setup
 https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/book/src/reference/envtest.md
 https://book.kubebuilder.io/cronjob-tutorial/writing-tests.html
 
+#### References
+Using a Local Registry with Minikube
+
+https://gist.github.com/trisberg/37c97b6cc53def9a3e38be6143786589
 
