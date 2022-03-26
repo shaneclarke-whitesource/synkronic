@@ -19,7 +19,6 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: DeploymentVersion is the Schema for the deploymentversions API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,8 +32,6 @@ spec:
             type: string
           metadata:
             type: object
-          namespace:
-            type: string
           spec:
             description: DeploymentVersionSpec defines the desired state of DeploymentVersion
             properties:

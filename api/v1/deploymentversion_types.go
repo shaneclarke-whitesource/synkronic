@@ -47,8 +47,6 @@ type DeploymentVersionStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-
-// DeploymentVersion is the Schema for the deploymentversions API
 type DeploymentVersion struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

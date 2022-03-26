@@ -37,7 +37,7 @@ var _ = Describe("DeploymentVersion controller", func() {
 	)
 
 	Context("When reconciling DeploymentVersion", func() {
-		It("Something should happen", func() {
+		It("A new deployment should be created", func() {
 
 			By("By creating an initial User Deployment")
 			ctx := context.Background()
@@ -110,39 +110,6 @@ var _ = Describe("DeploymentVersion controller", func() {
 				},
 			}
 
-			/*
-				s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme,
-					scheme.Scheme)
-
-				var b bytes.Buffer
-				buffwriter := bufio.NewWriter(&b)
-
-				s.Encode(deploymentVersion, buffwriter)
-
-				buffwriter.Flush()
-				fmt.Println(b.String())
-
-				deploymentVersion2 := &kyaninusv1.DeploymentVersion{}
-
-				s.Decode(b.Bytes(), &schema.GroupVersionKind{Group: "kyaninus.codepraxis.com", Version: "v1", Kind: "DeploymentVersion"}, deploymentVersion2)
-			*/
-			/*
-				bytes, err := json.Marshal(deploymentVersion)
-				if err != nil {
-					fmt.Println("Can't serislize", deploymentVersion)
-				}
-
-				asdf := string(bytes)
-				fmt.Printf("%v => %v, '%v'\n", deploymentVersion, bytes, asdf)
-
-					kind := reflect.TypeOf(kyaninusv1.DeploymentVersion{}).Name()
-
-					gvk := kyaninusv1.GroupVersion.WithKind(kind)
-
-					metav1.NewControllerRef(deploymentVersion, gvk)
-			*/
-
-			//err1 := k8sClient.Create(ctx, deploymentVersion)
 			Expect(k8sClient.Create(ctx, deploymentVersion)).Should(Succeed())
 
 			/*
@@ -157,6 +124,7 @@ var _ = Describe("DeploymentVersion controller", func() {
 			*/
 
 			deployVersionLookupKey := types.NamespacedName{Name: "deployversion1", Namespace: DeployNamespace}
+
 			createdDeployVersion := &kyaninusv1.DeploymentVersion{}
 
 			// We'll need to retry getting this newly created DeploymentVersion, given that creation may not immediately happen.
@@ -168,10 +136,12 @@ var _ = Describe("DeploymentVersion controller", func() {
 				return true
 			}, timeout, interval).Should(BeTrue())
 
+			By("Waiting for controller created deployment")
+
 			//Check new deployment has been created per spec
 			createdDeploy2 := &appsv1.Deployment{}
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, types.NamespacedName{Name: DeployName + "1", Namespace: DeployNamespace}, createdDeploy2)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: "deployversion1", Namespace: DeployNamespace}, createdDeploy2)
 				if err != nil {
 					return false
 				}
